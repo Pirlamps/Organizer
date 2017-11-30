@@ -28,15 +28,24 @@ dependencies {
     def testDependencies = rootProject.ext.testDependencies
     def androidTestDependencies = rootProject.ext.androidTestDependencies
     def kotlinDependencies = rootProject.ext.kotlinDependencies
+    def annotationProcessorDependencies = rootProject.ext.annotationProcessorDependencies
 
     implementation kotlinDependencies.kotlin
 
     implementation googleDependencies.appCompact
     implementation googleDependencies.constraintLayout
+    implementation googleDependencies.archRoom
+    implementation googleDependencies.archRoomRX
+    implementation googleDependencies.archLifecycle
 
     testImplementation testDependencies.junit
 
     androidTestImplementation androidTestDependencies.testRunner
     androidTestImplementation androidTestDependencies.espressoCore
+    androidTestImplementation androidTestDependencies.archRoomTesting
+
+    annotationProcessor annotationProcessorDependencies.archRoomAnnotation
+    annotationProcessor annotationProcessorDependencies.archLifecycleAnnotation
+
 
 }
