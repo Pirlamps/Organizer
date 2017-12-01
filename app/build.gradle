@@ -31,6 +31,7 @@ dependencies {
     def annotationProcessorDependencies = rootProject.ext.annotationProcessorDependencies
 
     implementation kotlinDependencies.kotlin
+    implementation kotlinDependencies.kotlinReflect
 
     implementation googleDependencies.appCompact
     implementation googleDependencies.constraintLayout
@@ -46,6 +47,7 @@ dependencies {
 
     annotationProcessor annotationProcessorDependencies.archRoomAnnotation
     annotationProcessor annotationProcessorDependencies.archLifecycleAnnotation
+    compile "org.jetbrains.kotlin:kotlin-reflect:1.1.51"
 
 
 }
