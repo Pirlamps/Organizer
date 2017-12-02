@@ -1,6 +1,8 @@
 package br.com.organizer.camera
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
@@ -10,12 +12,17 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
+import android.support.v4.app.ActivityCompat
 import android.support.v4.app.Fragment
+import android.util.Size
 import android.view.*
 import android.view.TextureView.SurfaceTextureListener
+import android.widget.Button
 import br.com.organizer.R
 import kotlinx.android.synthetic.main.fragment_camera.*
 import java.io.*
+import java.util.*
+
 
 class CameraFragment : Fragment() {
 
@@ -34,11 +41,18 @@ class CameraFragment : Fragment() {
     private lateinit var textureListener: SurfaceTextureListener
     private lateinit var stateCallback: CameraDevice.StateCallback
     private lateinit var captureCallback: CameraCaptureSession.CaptureCallback
+    private lateinit var captureRequestBuilder: CaptureRequest.Builder
+    private lateinit var captureRequest: CaptureRequest
+    private lateinit var cameraCaptureSession: CameraCaptureSession
+    private lateinit var cameraPreview: TextureView
+    private var cameraId: String? = null
     private var backgroundThread: HandlerThread? = null
     private var backgroundHandler: Handler? = null
-    private val file: File? = null
+    private var imageDimension: Size? = null
     private var cameraDevice: CameraDevice? = null
-    private lateinit var cameraPreview: TextureView
+    private val file: File? = null
+
+    private val REQUEST_CAMERA_PERMISSION = 200
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,15 +63,16 @@ class CameraFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater?.inflate(R.layout.fragment_camera, container, false)
 
-        setupCamera()
+        configViews()
+        setupCamera(view!!)
 
         return view
     }
 
-    fun setupCamera() {
+    fun setupCamera(view: View) {
 
-        cameraPreview = camera_preview
-        val cameraButton = camera_button
+        cameraPreview = view.findViewById(R.id.camera_preview)
+        val cameraButton = view.findViewById<Button>(R.id.camera_button)
 
         cameraPreview.surfaceTextureListener = textureListener
         cameraButton.setOnClickListener({
@@ -67,11 +82,63 @@ class CameraFragment : Fragment() {
     }
 
     private fun openCamera() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val manager = activity.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        try {
+            cameraId = manager.cameraIdList[0]
+            val characteristics = manager.getCameraCharacteristics(cameraId)
+            val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!
+            imageDimension = map.getOutputSizes(SurfaceTexture::class.java)[0]
+            // Add permission for camera and let user grant the permission
+            if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_CAMERA_PERMISSION)
+                return
+            }
+            manager.openCamera(cameraId, stateCallback, null)
+        } catch (e: CameraAccessException) {
+            e.printStackTrace()
+        }
+
     }
 
     private fun createCameraPreview() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        try {
+            val texture = cameraPreview.surfaceTexture
+            texture.setDefaultBufferSize(imageDimension!!.width, imageDimension!!.height)
+            val surface = Surface(texture)
+            captureRequestBuilder = cameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)!!
+            captureRequestBuilder.addTarget(surface)
+            cameraDevice?.createCaptureSession(arrayListOf(surface), object : CameraCaptureSession.StateCallback() {
+                override fun onConfigured(captureSession: CameraCaptureSession?) {
+                    if (cameraDevice == null)
+                        return
+
+                    cameraCaptureSession = captureSession!!
+                    updatePreview()
+
+                }
+
+                override fun onConfigureFailed(p0: CameraCaptureSession?) {
+                    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+                }
+
+            }, null)
+
+        } catch (e: CameraAccessException) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun updatePreview() {
+
+        cameraDevice?.let {
+            captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO)
+            try {
+                cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler)
+            } catch (e: CameraAccessException) {
+                e.printStackTrace()
+            }
+
+        }
     }
 
     private fun tekePicture() {
@@ -128,8 +195,8 @@ class CameraFragment : Fragment() {
                 }
 
                 private fun save(bytes: ByteArray) {
-                    var output:OutputStream? = null
-                    try{
+                    var output: OutputStream? = null
+                    try {
                         output = FileOutputStream(file)
                         output.write(bytes)
                     } finally {
@@ -138,26 +205,44 @@ class CameraFragment : Fragment() {
                 }
             }
 
-            reader.setOnImageAvailableListener(readerListener,backgroundHandler)
+            reader.setOnImageAvailableListener(readerListener, backgroundHandler)
+            val captureListener = object : CameraCaptureSession.CaptureCallback() {
+                override fun onCaptureCompleted(session: CameraCaptureSession?, request: CaptureRequest?, result: TotalCaptureResult?) {
+                    super.onCaptureCompleted(session, request, result)
+                    print("Saved: " + file)
+                    createCameraPreview()
+                }
+            }
 
+            cameraDevice?.createCaptureSession(outputSurfaces, object : CameraCaptureSession.StateCallback() {
+                override fun onConfigured(session: CameraCaptureSession?) {
+                    try {
+                        session?.capture(captureBuilder?.build(), captureListener, backgroundHandler)
+                    } catch (e: CameraAccessException) {
+                        e.printStackTrace()
+                    }
+                }
+
+                override fun onConfigureFailed(p0: CameraCaptureSession?) {
+                    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+                }
+
+            }, backgroundHandler)
+        } catch (e: CameraAccessException) {
+            e.printStackTrace()
         }
 
 
-
     }
-
-
 
 
     fun configViews() {
 
         textureListener = object : SurfaceTextureListener {
             override fun onSurfaceTextureSizeChanged(p0: SurfaceTexture?, p1: Int, p2: Int) {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
             }
 
             override fun onSurfaceTextureUpdated(p0: SurfaceTexture?) {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
             }
 
             override fun onSurfaceTextureDestroyed(p0: SurfaceTexture?) = false
@@ -211,5 +296,25 @@ class CameraFragment : Fragment() {
         }
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == REQUEST_CAMERA_PERMISSION && grantResults[0] == PackageManager.PERMISSION_DENIED) {
+            activity.finish()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        startBackgroundThread()
+        if (cameraPreview.isAvailable) {
+            openCamera()
+        } else {
+            cameraPreview.surfaceTextureListener = textureListener
+        }
+    }
+
+    override fun onPause() {
+        stopBackgroundThread()
+        super.onPause()
+    }
 
 }
