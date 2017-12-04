@@ -24,6 +24,7 @@ android {
 
 dependencies {
 
+    def otherDependencies = rootProject.ext.otherDependencies
     def googleDependencies = rootProject.ext.googleDependencies
     def testDependencies = rootProject.ext.testDependencies
     def androidTestDependencies = rootProject.ext.androidTestDependencies
@@ -38,6 +39,8 @@ dependencies {
     implementation googleDependencies.archRoom
     implementation googleDependencies.archRoomRX
     implementation googleDependencies.archLifecycle
+
+    implementation otherDependencies.potoAparrat
 
     testImplementation testDependencies.junit
 

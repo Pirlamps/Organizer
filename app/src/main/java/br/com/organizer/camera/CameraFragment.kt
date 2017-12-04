@@ -14,12 +14,12 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.Fragment
+import android.util.Log
 import android.util.Size
 import android.view.*
 import android.view.TextureView.SurfaceTextureListener
 import android.widget.Button
 import br.com.organizer.R
-import kotlinx.android.synthetic.main.fragment_camera.*
 import java.io.*
 import java.util.*
 
@@ -109,12 +109,11 @@ class CameraFragment : Fragment() {
             captureRequestBuilder.addTarget(surface)
             cameraDevice?.createCaptureSession(arrayListOf(surface), object : CameraCaptureSession.StateCallback() {
                 override fun onConfigured(captureSession: CameraCaptureSession?) {
-                    if (cameraDevice == null)
-                        return
+                    cameraDevice?.let {
+                        cameraCaptureSession = captureSession!!
+                        updatePreview()
 
-                    cameraCaptureSession = captureSession!!
-                    updatePreview()
-
+                    }
                 }
 
                 override fun onConfigureFailed(p0: CameraCaptureSession?) {
@@ -142,7 +141,12 @@ class CameraFragment : Fragment() {
     }
 
     private fun tekePicture() {
-        cameraDevice?.let {
+//        cameraDevice?.let {
+//            print("cameraDevice is null")
+//            return
+//        }
+
+        if (cameraDevice == null) {
             print("cameraDevice is null")
             return
         }
@@ -158,7 +162,7 @@ class CameraFragment : Fragment() {
             var height = 480
 
             jpegSize?.let {
-                if (it.isEmpty()) {
+                if (it.isNotEmpty()) {
                     width = it[0].width
                     height = it[0].height
                 }
@@ -175,15 +179,17 @@ class CameraFragment : Fragment() {
             captureBuilder?.addTarget(reader.surface)
             captureBuilder?.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO)
 
-            val file = File(Environment.getExternalStorageDirectory().toString() + "/pic.jpg")
-
+            val path = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString() + "/Organizer")
+            path.mkdirs()
+            val file = File(path,"OrganizerPic1.jpg")
+            Log.d("TESTE", "salvando em " + Environment.DIRECTORY_DCIM + "/pic.jpg")
             val readerListener = object : ImageReader.OnImageAvailableListener {
-                override fun onImageAvailable(p0: ImageReader?) {
+                override fun onImageAvailable(imageReader: ImageReader?) {
                     var image: Image? = null
                     try {
-                        image = reader.acquireLatestImage()
-                        val buffer = image.planes[0].buffer
-                        val bytes = ByteArray(buffer.capacity())
+                        image = imageReader!!.acquireLatestImage()
+                        val buffer = image.planes[0].buffer.rewind()
+                        val bytes = ByteArray(buffer.remaining())
                         save(bytes)
                     } catch (e: FileNotFoundException) {
                         e.printStackTrace()
@@ -194,11 +200,15 @@ class CameraFragment : Fragment() {
                     }
                 }
 
-                private fun save(bytes: ByteArray) {
+                private fun save(bytes: ByteArray){
                     var output: OutputStream? = null
                     try {
+
                         output = FileOutputStream(file)
                         output.write(bytes)
+                    } catch (e: Exception) {
+                        Log.d("TESTE", "Deu ruim ;(")
+                        e.printStackTrace()
                     } finally {
                         output?.close()
                     }
@@ -211,6 +221,7 @@ class CameraFragment : Fragment() {
                     super.onCaptureCompleted(session, request, result)
                     print("Saved: " + file)
                     createCameraPreview()
+
                 }
             }
 
@@ -316,5 +327,6 @@ class CameraFragment : Fragment() {
         stopBackgroundThread()
         super.onPause()
     }
+
 
 }

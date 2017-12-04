@@ -3,6 +3,7 @@ package br.com.organizer
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import br.com.organizer.camera.CameraFragment
+import br.com.organizer.camera.CameraFragment2
 import br.com.organizer.gallery.GalleryFragment
 import br.com.organizer.program.ProgramFragment
 import kotlinx.android.synthetic.main.activity_main.*
@@ -17,7 +18,7 @@ class MainActivity : AppCompatActivity() {
 
     fun setupPager(){
         val asList = arrayListOf(GalleryFragment.newInstance(),
-                CameraFragment.newInstance(),
+                CameraFragment2.newInstance(),
                 ProgramFragment.newInstance())
 
 
