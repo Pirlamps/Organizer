@@ -14,7 +14,6 @@ import br.com.organizer.R
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.log.Loggers.*
 import io.fotoapparat.parameter.ScaleType
-import io.fotoapparat.parameter.selector.FlashSelectors.*
 import io.fotoapparat.parameter.selector.FocusModeSelectors.*
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.parameter.selector.Selectors.firstAvailable
@@ -82,11 +81,11 @@ class CameraFragment : Fragment() {
                         continuousFocus(),
                         autoFocus(),
                         fixed()))
-                .flash(firstAvailable(
-                        autoRedEye(),
-                        autoFlash(),
-                        torch()
-                ))
+//                .flash(firstAvailable(
+//                        autoRedEye(),
+//                        autoFlash(),
+//                        torch()
+//                ))
                 .logger(loggers(
                         logcat(),
                         fileLogger(activity)

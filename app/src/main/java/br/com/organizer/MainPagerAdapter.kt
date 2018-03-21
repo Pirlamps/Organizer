@@ -13,4 +13,6 @@ class MainPagerAdapter(fm: FragmentManager,val fragmentList: List<Fragment>) : F
     override fun getItem(position: Int): Fragment {
         return fragmentList[position]
     }
+
+
 }

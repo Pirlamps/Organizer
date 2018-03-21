@@ -34,7 +34,9 @@ dependencies {
     implementation kotlinDependencies.kotlin
     implementation kotlinDependencies.kotlinReflect
 
+    implementation googleDependencies.recyclerView
     implementation googleDependencies.appCompact
+    implementation googleDependencies.cardView
     implementation googleDependencies.constraintLayout
     implementation googleDependencies.archRoom
     implementation googleDependencies.archRoomRX
