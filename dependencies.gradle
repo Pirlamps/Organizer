@@ -17,10 +17,15 @@ ext {
     constraintLibraryVersion = '1.0.2'
     roomVersion = '1.0.0'
     lifecycleVersion = '1.0.0'
+    fotoapparatVersion = '1.5.0'
 
     kotlinDependencies = [
             kotlin: "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlinVersion",
             kotlinReflect: "org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}"
+    ]
+
+    otherDependencies = [
+            potoAparrat: "io.fotoapparat.fotoapparat:library:${fotoapparatVersion}"
     ]
 
     googleDependencies = [
